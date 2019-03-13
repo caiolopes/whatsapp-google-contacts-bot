@@ -1,4 +1,5 @@
 from __future__ import print_function
+import sys
 import time
 import json
 import pickle
@@ -45,53 +46,56 @@ driver = webdriver.Chrome(chromedriver)
 driver.get("https://web.whatsapp.com")
 input('Aperte enter após escanear o QR Code...')
 
+while True:
+    try:
+        numbers = set()
+        while True:
+            a = driver.find_elements_by_class_name("_1wjpf")
+            if force_all or any('+' in el.get_attribute('title') for el in a):  # temos gente nova pra adicionar
+                for el in a:
+                    name = el.get_attribute('title')
+                    if len(name) > 0:
+                        # el.click()
+                        numbers.add(name)
 
-try:
-    numbers = set()
-    while True:
-        a = driver.find_elements_by_class_name("_1wjpf")
-        if force_all or any('+' in el.get_attribute('title') for el in a):  # temos gente nova pra adicionar
-            for el in a:
-                name = el.get_attribute('title')
-                if len(name) > 0:
-                    # el.click()
-                    numbers.add(name)
-
-            recent_list = driver.find_elements_by_xpath("//div[@class='_2wP_Y']")
-            for recent in recent_list:
-                driver.execute_script("arguments[0].scrollIntoView();", recent)
-
-            time.sleep(0.1)
-        else:
-            print('Ninguém novo para adicionar')
-            break
-except Exception:
-    pass
-
-
-new_numbers = [number for number in numbers if '+' in number]
-print('Quantidade de novos números:', len(new_numbers))
+                time.sleep(0.5)
+                recent_list = driver.find_elements_by_xpath("//div[@class='_2wP_Y']")
+                for recent in recent_list:
+                    driver.execute_script("arguments[0].scrollIntoView();", recent)
+            else:
+                print('Ninguém novo para adicionar')
+                break
+    except Exception:
+        pass
 
 
-for i, number in enumerate(new_numbers[:]):
-    service.people().createContact(parent='people/me', body={
-        "names": [{
-            "givenName": "LI 11 - {}".format(str(count_leads).zfill(5))
-        }],
-        "phoneNumbers": [{
-            'value': number
-        }]
-    }).execute()
-    count_leads += 1
-    print('Inserido ({}): {}'.format(i, number))
-    new_numbers.remove(number)
-    if (i + 1) % 90 == 0:
-        print('Escrevemos 90 usuários, vamos aguardar 1 min para escrever mais 90...')
-        time.sleep(60)
+    new_numbers = [number for number in numbers if '+' in number]
+    print('Quantidade de novos números:', len(new_numbers))
 
-# atualiza quantidade de leads
-config['count_leads'] = count_leads
-with open('config.json', 'w') as config_file:
-    json.dump(config, config_file, indent=4)
 
-print('Finalizado!')
+    for i, number in enumerate(new_numbers[:]):
+        service.people().createContact(parent='people/me', body={
+            "names": [{
+                "givenName": "LI 11 - {}".format(str(count_leads).zfill(5))
+            }],
+            "phoneNumbers": [{
+                'value': number
+            }]
+        }).execute()
+        count_leads += 1
+        print('Inserido ({}): {}'.format(i, number))
+        new_numbers.remove(number)
+        if (i + 1) % 90 == 0:
+            print('Escrevemos 90 usuários, vamos aguardar 1 min para escrever mais 90...')
+            time.sleep(60)
+
+    # atualiza quantidade de leads
+    config['count_leads'] = count_leads
+    with open('config.json', 'w') as config_file:
+        json.dump(config, config_file, indent=4)
+
+    print('Finalizado!')
+    run_again = input('Aperte enter para rodar de novo ou digite algo para sair...')
+    if len(run_again) > 0:
+        sys.exit()
+        
